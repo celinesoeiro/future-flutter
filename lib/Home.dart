@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:consumo_web_avancado/Post.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
@@ -13,8 +14,18 @@ class _HomeState extends State<Home> {
 
   String _baseUrl = "http://jsonplaceholder.typicode.com/";
 
-  _recoverPost(){
-
+  Future<List<Post>> _recoverPost() async {
+    
+    http.Response response = await http.get(_baseUrl + "posts");
+    var data = json.decode(response.body);
+    
+    List<Post> posts = List();
+    for (var p in data){
+      Post post = Post(p["userId"],p["id"],p["title"],p["body"]);
+      posts.add(post);
+    }
+    print(posts.toString());
+    return posts;
   }
 
   @override
@@ -23,7 +34,7 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: Text('Future')
       ),
-      body: FutureBuilder<Map>(
+      body: FutureBuilder<List<Post>>(
         future: _recoverPost(),
         builder: (context, snapshot){
           switch (snapshot.connectionState) {
@@ -32,6 +43,9 @@ class _HomeState extends State<Home> {
               break;
             case ConnectionState.waiting:
               print('waiting');
+              return Center(
+                child: CircularProgressIndicator(),
+              );
               break;
             case ConnectionState.active:
               print('active');
@@ -39,8 +53,21 @@ class _HomeState extends State<Home> {
             case ConnectionState.done:
               print('done');
               if (snapshot.hasError){
+                print("erro ao carregar a lista");
               } else {
-                
+                print('lista carregada com sucesso');
+                return ListView.builder(
+                  itemCount: snapshot.data.length,
+                  itemBuilder: (context,index){
+                    List<Post> list = snapshot.data;
+                    Post post = list[index];
+
+                    return ListTile(
+                      title: Text(post.title),
+                      subtitle: Text(post.body)
+                    );
+                  },
+                );
               }
               break;
             default:
